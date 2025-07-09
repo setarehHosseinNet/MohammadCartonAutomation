@@ -1,0 +1,377 @@
+﻿@page "/"
+@using Microsoft.EntityFrameworkCore
+@using DNTPersianUtils.Core
+
+@using Microsoft.AspNetCore.Components.Forms
+@using MohammadCartonAutomation.Models
+@inject ApplicationDbContext _db
+@* @inject IJSRuntime JS *@
+
+<PageTitle>فرم کامل قیمت‌گذاری کارتن</PageTitle>
+
+<div dir="rtl" class="max-w-7xl mx-auto p-8 bg-white rounded-2xl shadow-2xl text-gray-800 font-[IRANSans]">
+    <h2 class="text-3xl font-extrabold mb-10 text-indigo-900 text-center">فرم کامل قیمت‌گذاری کارتن</h2>
+
+    <EditForm Model="formModel" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-red-600 mb-6" />
+
+        <div class="row-cols-2 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+                <label class="block font-medium mb-1">سفارش‌دهنده:</label>
+                <InputText @bind-Value="formModel.CustomerName" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">شماره تماس:</label>
+                <InputText @bind-Value="formModel.PhoneNumber" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">تاریخ آخرین سفارش:</label>
+                <span class="text-sm text-gray-500">@formModel.RegisterDate.ToPersianDateTextify()</span>
+
+                <InputDate @bind-Value="formModel.RegisterDateEndOrder" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">کد محصول:</label>
+                <InputText @bind-Value="formModel.ProductCode" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">نام محصول:</label>
+                <InputText @bind-Value="formModel.ProductName" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">تیراژ:</label>
+                <InputNumber @bind-Value="formModel.Quantity" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">تاریخ:</label>
+                <span class="text-sm text-gray-500">@formModel.RegisterDate.ToPersianDateTextify()</span>
+
+                @* <InputDate @bind-Value="formModel.RegisterDate" class="input-field" /> *@
+                <InputDate id="persianDate" @bind-Value="formModel.RegisterDate" class="input-field" />
+
+                @*      <input id="persianDate" class="input-field" />
+ *@
+
+            </div>
+            <div>
+                <label class="block font-medium mb-1">نام تنظیم‌کننده:</label>
+                <InputText @bind-Value="formModel.OperatorName" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">نوع پرداخت:</label>
+                <InputSelect @bind-Value="formModel.PaymentType" class="input-field">
+                    <option value="نقد">نقد</option>
+                    <option value="اعتباری">اعتباری</option>
+                </InputSelect>
+            </div>
+            @*  <div>
+                <label class="block font-medium mb-1">پالت‌بندی:</label>
+                <InputText @bind-Value="formModel.PalletOption" class="input-field" />
+            </div *@
+
+            <div class="col-span-full">
+                <label class="block font-medium mb-2">گزینه‌های اضافی:</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    @foreach (var option in new[] { "نمونه مشتری", "ابعاد مشتری", "ابعاد نمونه", "کلیشه جدید", "منگنه", "جای دسته", "پانچ", "پالت کش", "هزینه حمل به عهده مشتری" })
+                    {
+                        <label class="inline-flex items-center space-x-2">
+                            <input type="checkbox" value="@option" checked="@formModel.AdditionalOptions.Contains(option)" @onchange="e => ToggleOption(option, e)" class="form-checkbox text-indigo-600" />
+                            <span>@option</span>
+                        </label>
+                    }
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-medium mb-1">چند لایه:</label>
+                <InputSelect @bind-Value="formModel.CartonType" class="input-field" >
+                    @foreach (var sheet in CartonType)
+                    {
+                        <option value="@sheet" >@sheet</option>
+
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <p>Test: @temp</p>
+                <label class="block font-medium mb-1">چند تیکه:</label>
+                <InputSelect @bind-Value="formModel.PieceType" class="input-field"@onchange="OnPieceTypeChanged">
+                    @foreach (var sheet in new[] { "یک تیکه", "نیم کارتن", "چهار تیکه" })
+                    {
+                        <option value="@sheet">@sheet</option>
+
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label class="block font-medium mb-1">نوع درب:</label>
+                <InputSelect @bind-Value="formModel.DoorType" class="input-field">
+                    @foreach (var sheet in new[] { "درب باز", "درب بسته", "دوبل" })
+                    {
+                        <option value="@sheet">@sheet</option>
+
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label class="block font-medium mb-1">تعداد درب:</label>
+                <InputSelect @bind-Value="formModel.DoorCount" class="input-field " >
+                    @foreach (var sheet in new[] { "تک درب", "دو درب" })
+                    {
+                        <option value="@sheet">@sheet</option>
+
+                    }
+                </InputSelect>
+            </div>
+
+
+            <div>
+                <label class="block font-medium mb-1">طول:</label>
+                <InputNumber @bind-Value="formModel.Height" class="input-field" />
+            </div>
+
+            <div>
+                <label class="block font-medium mb-1">عرض:</label>
+                <InputNumber @bind-Value="formModel.Length" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">ارتفاع:</label>
+                <InputNumber @bind-Value="formModel.Width" class="input-field" />
+            </div>
+
+        
+
+            <div class="mt-10 border-t pt-5 text-sm text-gray-700">
+                <p>شیت: @formModel.CalculatedSheet</p>
+                <p>لب درب : @formModel.LipLength</p>
+
+            </div>
+
+            <div class="mt-10 border-t pt-5 text-sm text-gray-700">
+                <p>طول صنعتی: @formModel.CalculatedSheet</p>
+                <p>عرض صنعتی : @formModel.LipLength</p>
+
+                <p>بررسی صحت عرض: @(formModel.IsIndustrialWidthValid ? "عرض صنعتی در رنج صحیح است" : "عرض صنعتی اشتباه است")</p>
+
+
+                <div>
+                    <label class="block font-medium mb-1">تعداد بدست آمده از هر ورق:</label>
+                    <InputNumber @bind-Value="formModel.NumberObtainedFromEachSheet" class="input-field" />
+                </div>
+                <p>طول ورق : @formModel.SheetLength</p>
+                <div>
+                    <label class="block font-medium mb-1">عرض ورق:</label>
+                    <InputNumber @bind-Value="formModel.SheetWidth" class="input-field" />
+                </div>
+            </div>
+            <div>
+                <label class="block font-medium mb-1">گام فلوت:</label>
+                <InputSelect @bind-Value="formModel.FlutStep" class="input-field">
+                    @foreach (var sheet in new[] { "C", "E", "B", "CE", "CB", "EB" })
+                    {
+                        <option value="@sheet">@sheet</option>
+
+                    }
+                </InputSelect>
+            </div>
+
+            <div>
+                <label class="block font-medium mb-1">ماشین چسب:</label>
+                <InputSelect @bind-Value="formModel.GlueMachine" class="input-field">
+                    @foreach (var sheet in materials)
+                    {
+                        <option value="@sheet.MaterialName">@sheet.MaterialName</option>
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label class="block font-medium mb-1">B/E فلوت:</label>
+                <InputSelect @bind-Value="formModel.BE_Flut" class="input-field">
+                    @foreach (var sheet in materials)
+                    {
+                        <option value="@sheet.MaterialName">@sheet.MaterialName</option>
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label class="block font-medium mb-1">لایه میانی:</label>
+                <InputSelect @bind-Value="formModel.MiddleLayer" class="input-field">
+                    @foreach (var sheet in materials)
+                    {
+                        <option value="@sheet.MaterialName">@sheet.MaterialName</option>
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label class="block font-medium mb-1">C فلوت:</label>
+                <InputSelect @bind-Value="formModel.CFlut" class="input-field">
+                    @foreach (var sheet in materials)
+                    {
+                        <option value="@sheet.MaterialName">@sheet.MaterialName</option>
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label class="block font-medium mb-1">زیره:</label>
+                <InputSelect @bind-Value="formModel.BottomLayer" class="input-field">
+                    @foreach (var sheet in materials)
+                    {
+                        <option value="@sheet.MaterialName">@sheet.MaterialName</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div>
+                <label class="block font-medium mb-1">هزینه سرباره به ازای هر متر:</label>
+                <InputNumber @bind-Value="formModel.OverheadCostPerMeter" class="input-field" readonly />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">فی ورق نقد:</label>
+                <InputNumber @bind-Value="formModel.CashPricePerSheet" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">فی ورق مدت دار:</label>
+                <InputNumber @bind-Value="formModel.CreditPricePerSheet" class="input-field" />
+            </div>
+
+            <div>
+                <label class="block font-medium mb-1">متراژ ورق:</label>
+                <InputNumber @bind-Value="formModel.SheetArea" class="input-field" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">تعداد ورق:</label>
+                <InputNumber @bind-Value="formModel.NumberOfSheets" class="input-field" />
+            </div>
+
+            <div class="mt-10 text-center">
+                <button type="submit"
+                        class="glow-button w-full max-w-xs mx-auto py-4 px-6 text-lg font-extrabold text-white rounded-2xl shadow-lg transform transition duration-300 ease-in-out hover:scale-105 focus:outline-none" @onclick="HandleValidSubmit">
+                    ثبت اطلاعات و محاسبه
+                </button>
+            </div>
+        </div>
+
+
+        <div class="mt-10 border-t pt-5 text-sm text-gray-700">
+            <p>طول صنعتی: @formModel.IndustrialLength</p>
+            <p>عرض صنعتی: @formModel.IndustrialWidth</p>
+            <p>مصرف هر متر مربع: @formModel.ConsumptionPerCarton:0.######</p>
+
+            <p>قیمت نهایی بدون مالیات: <strong>@formModel.FinalPriceNoTax:N0</strong> تومان</p>
+            <p>مالیات: <strong>@formModel.TaxAmount:N0</strong> تومان</p>
+            <p>قیمت نهایی با مالیات: <strong>@formModel.FinalPriceWithTax:N0</strong> تومان</p>
+
+        </div>
+    </EditForm>
+    <input id="persianDate" class="form-control" />
+    <button class="btn btn-warning" @onclick="TestJs">تست JS</button>
+</div>
+
+@code {
+    public string[] code = new string[4] { "0", "0", "0", "0" };
+    private string temp = "";
+    private CartonPriceFormModel formModel = new();
+    private List<TbMaterial> materials = new();
+    private string[] CartonType;
+    [Inject] IJSRuntime JS { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+
+        CartonType = new[] { "3 لایه", "5 لایه" };
+        materials = await _db.TbMaterials.ToListAsync();
+    }
+    async Task TestJs()
+    {
+        await JS.InvokeVoidAsync("alert", "🔥 ارتباط با JS برقرار است!");
+    }
+    private async Task OnPieceTypeChanged(ChangeEventArgs e)
+    {
+        await JS.InvokeVoidAsync("alert", $"مقدار انتخاب‌شده: ");
+        var t = e.Value?.ToString() ?? "";
+        await JS.InvokeVoidAsync("alert", $"مقدار انتخاب‌شده: {t}");
+        switch (t)
+        {
+            case "":
+                code[0] = "0";
+                code[1] = "0";
+                code[2] = "0";
+                code[3] = "0";
+                break;
+            case "3 لایه":
+                code[0] = "1";
+                break;
+            case "5 لایه":
+                code[0] = "2";
+                break;
+            case "یک تیکه":
+                code[1] = "1";
+                break;
+            case "نیم کارتن":
+                code[1] = "2";
+                break;
+            case "چهار تیکه":
+                code[1] = "3";
+                break;
+            case "درب باز":
+                code[2] = "1";
+                break;
+            case "درب بسته":
+                code[2] = "2";
+                break;
+            case "دوبل":
+                code[2] = "3";
+                break;
+            case "تک درب":
+                code[3] = "1";
+                break;
+            case "دو درب":
+                code[3] = "2";
+                break;
+            default:
+                break;
+        }
+        temp = code[0] + code[1] + code[2] + code[3];
+        await JS.InvokeVoidAsync("alert", "Test JS...."+temp);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+            await JS.InvokeVoidAsync("console.log", "🛠️ C# event handler triggered");
+        if (firstRender)
+        {
+          
+            await JS.InvokeVoidAsync("activatePersianDatePicker", "persianDate");
+          
+
+        }
+     await JS.InvokeVoidAsync("alert", "Test JS....");
+
+    }
+    private  async Task HandleValidSubmit()
+    {
+       
+
+   
+        // این خط باید در کنسول بیاد
+    
+        
+        // حالا تابع jsTest رو صدا بزن
+        await JS.InvokeVoidAsync("alert", "Test JS....");
+            // فرمول‌ها و محاسبات (در صورت نیاز اضافه شود)
+    }
+
+    private void ToggleOption(string option, ChangeEventArgs e)
+    {
+        bool isChecked = (bool)e.Value;
+        if (isChecked)
+        {
+            if (!formModel.AdditionalOptions.Contains(option))
+                formModel.AdditionalOptions.Add(option);
+        }
+        else
+        {
+            if (formModel.AdditionalOptions.Contains(option))
+                formModel.AdditionalOptions.Remove(option);
+        }
+    }
+}
